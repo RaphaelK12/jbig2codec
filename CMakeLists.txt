@@ -36,7 +36,7 @@ cmake_minimum_required(VERSION 3.2)
 project(jbig2codec)
 
 # Program version
-set(JBIG2C_VERSION "0.1.0")
+set(JBIG2C_VERSION "0.1.1")
 
 # Program name
 set(JBIG2C "jbig2codec")
@@ -47,8 +47,13 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Filename.cmake)
 
 add_definitions(-DJBIG2C_VERSION="${JBIG2C_VERSION}")
 
-# Add defition for GNU/Linux operating system (in terms of fxcrt/fx_system.h).
+# Add JBIG2 codec defitions.
+#
+# These definitions are necessary to make it work while being extracted from
+# the Pdfium codebase.
+#
 add_definitions(-D_FX_OS_=4)
+add_definitions(-DMEMORY_TOOL_REPLACES_ALLOCATOR=1)
 
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
@@ -59,19 +64,20 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEBUG")
 	if (CMAKE_COMPILER_IS_GNUCC OR
 			${CMAKE_C_COMPILER_ID} MATCHES "Clang")
-		add_definitions(" -g -Wall -pedantic -std=c++11")
-		add_definitions(" -Wshadow -Wpointer-arith -Wcast-qual")
-		add_definitions(" -Wcast-align -Wstrict-prototypes")
-		add_definitions(" -Wmissing-prototypes -Wconversion -Wsign-compare")
+		add_definitions(" -g -std=c++11")
+		#add_definitions(" -g -Wall -pedantic -std=c++11")
+		#add_definitions(" -Wshadow -Wpointer-arith -Wcast-qual")
+		#add_definitions(" -Wcast-align -Wstrict-prototypes")
+		#add_definitions(" -Wmissing-prototypes -Wconversion -Wsign-compare")
 	endif()
 else()
 	message(STATUS "[OPTION] Building jbig2codec ${JBIG2C_VERSION}, release version")
 	if (CMAKE_COMPILER_IS_GNUCC OR
 			${CMAKE_C_COMPILER_ID} MATCHES "Clang")
-		add_definitions(" -Wall -pedantic -std=c++11")
-		add_definitions(" -Wshadow -Wpointer-arith -Wcast-qual")
-		add_definitions(" -Wcast-align -Wstrict-prototypes")
-		add_definitions(" -Wmissing-prototypes -Wconversion -Wsign-compare")
+		#add_definitions(" -Wall -pedantic -std=c++11")
+		#add_definitions(" -Wshadow -Wpointer-arith -Wcast-qual")
+		#add_definitions(" -Wcast-align -Wstrict-prototypes")
+		#add_definitions(" -Wmissing-prototypes -Wconversion -Wsign-compare")
 	endif()
 endif()
 
@@ -92,6 +98,15 @@ set(JBIG2C_LIB_SRC	core/fxcodec/jbig2/JBig2_ArithDecoder.cpp
 			core/fxcodec/jbig2/JBig2_Segment.cpp
 			core/fxcodec/jbig2/JBig2_SymbolDict.cpp
 			core/fxcodec/jbig2/JBig2_TrdProc.cpp)
+file(GLOB_RECURSE FXCRT_CPPSRC "core/fxcrt/*.cpp")
+file(GLOB_RECURSE FXCRT_CCSRC "core/fxcrt/*.cc")
+list(APPEND JBIG2C_LIB_SRC ${FXCRT_CPPSRC})
+list(APPEND JBIG2C_LIB_SRC ${FXCRT_CCSRC})
+
+file(GLOB_RECURSE TP_BASE_CPPSRC "third_party/base/*.cpp")
+file(GLOB_RECURSE TP_BASE_CCSRC "third_party/base/*.cc")
+list(APPEND JBIG2C_LIB_SRC ${TP_BASE_CPPSRC})
+list(APPEND JBIG2C_LIB_SRC ${TP_BASE_CCSRC})
 
 # Look for libraries, packages, etc.
 
@@ -111,10 +126,12 @@ include_directories("./")
 
 # Compile jbig2codec library and executable
 add_library(${JBIG2C_LIB} STATIC ${JBIG2C_LIB_SRC})
+add_executable(${JBIG2C} main.cpp)
 set_target_properties(${JBIG2C_LIB} PROPERTIES OUTPUT_NAME "jbig2c")
 define_filename_for_sources(${JBIG2C_LIB})
 
 # Link jbig2codec executable
+target_link_libraries(${JBIG2C} ${JBIG2C_LIB})
 
 # Install jbig2codec executable
 
