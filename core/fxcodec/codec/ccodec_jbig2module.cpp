@@ -22,16 +22,15 @@ JBig2_DocumentContext::~JBig2_DocumentContext() {}
 JBig2_DocumentContext *GetJBig2DocumentContext(
         std::unique_ptr<JBig2_DocumentContext> *pContextHolder)
 {
-	if (!pContextHolder->get())
+	if (!pContextHolder->get()) {
 		*pContextHolder = pdfium::MakeUnique<JBig2_DocumentContext>();
+	}
 	return pContextHolder->get();
 }
 
 CCodec_Jbig2Context::CCodec_Jbig2Context()
 	: m_width(0),
 	  m_height(0),
-	  m_pGlobalStream(nullptr),
-	  m_pSrcStream(nullptr),
 	  m_dest_buf(0),
 	  m_dest_pitch(0) {}
 
@@ -42,34 +41,29 @@ CCodec_Jbig2Module::~CCodec_Jbig2Module() {}
 FXCODEC_STATUS CCodec_Jbig2Module::StartDecode(
         CCodec_Jbig2Context *pJbig2Context,
         std::unique_ptr<JBig2_DocumentContext> *pContextHolder,
-        uint32_t width,
-        uint32_t height,
-        const RetainPtr<CPDF_StreamAcc> &src_stream,
-        const RetainPtr<CPDF_StreamAcc> &global_stream,
-        uint8_t *dest_buf,
-        uint32_t dest_pitch,
-        PauseIndicatorIface *pPause)
+        uint8_t *src_buf, uint32_t src_len,
+        uint32_t width, uint32_t height,
+        uint8_t *dest_buf, uint32_t dest_pitch, uint32_t len,
+        int32_t decode_type)
 {
 	if (!pJbig2Context) {
 		return FXCODEC_STATUS_ERR_PARAMS;
 	}
 
-	JBig2_DocumentContext *pJBig2DocumentContext =
+	JBig2_DocumentContext *doc_ctx =
 	        GetJBig2DocumentContext(pContextHolder);
 	pJbig2Context->m_width = width;
 	pJbig2Context->m_height = height;
-	pJbig2Context->m_pSrcStream = src_stream;
-	pJbig2Context->m_pGlobalStream = global_stream;
 	pJbig2Context->m_dest_buf = dest_buf;
 	pJbig2Context->m_dest_pitch = dest_pitch;
 	memset(dest_buf, 0, height * dest_pitch);
 
 	pJbig2Context->m_pContext = pdfium::MakeUnique<CJBig2_Context>(
-	                                    global_stream, src_stream,
-	                                    pJBig2DocumentContext->GetSymbolDictCache(), false);
+	                                    src_buf, src_len, 75, doc_ctx->GetSymbolDictCache());
+	pJbig2Context->m_pContext->m_PauseStep = decode_type;
 
 	bool succeeded = pJbig2Context->m_pContext->GetFirstPage(
-	                         dest_buf, width, height, dest_pitch, pPause);
+	                         dest_buf, width, height, dest_pitch, nullptr);
 	return Decode(pJbig2Context, succeeded);
 }
 
@@ -85,16 +79,13 @@ FXCODEC_STATUS CCodec_Jbig2Module::Decode(CCodec_Jbig2Context *pJbig2Context,
                 bool decode_success)
 {
 	FXCODEC_STATUS status = pJbig2Context->m_pContext->GetProcessingStatus();
-	if (status != FXCODEC_STATUS_DECODE_FINISH)
+	if (status != FXCODEC_STATUS_DECODE_FINISH) {
 		return status;
+	}
 
 	pJbig2Context->m_pContext.reset();
-	if (!decode_success)
+	if (!decode_success) {
 		return FXCODEC_STATUS_ERROR;
-
-	int dword_size = pJbig2Context->m_height * pJbig2Context->m_dest_pitch / 4;
-	uint32_t *dword_buf = reinterpret_cast<uint32_t *>(pJbig2Context->m_dest_buf);
-	for (int i = 0; i < dword_size; i++)
-		dword_buf[i] = ~dword_buf[i];
+	}
 	return FXCODEC_STATUS_DECODE_FINISH;
 }

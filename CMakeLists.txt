@@ -36,11 +36,12 @@ cmake_minimum_required(VERSION 3.2)
 project(jbig2codec)
 
 # Program version
-set(JBIG2C_VERSION "0.1.1")
+set(JBIG2C_VERSION "0.1.2")
 
 # Program name
 set(JBIG2C "jbig2codec")
-set(JBIG2C_LIB "libjbig2c")
+set(JBIG2C_LIB "libjb2")
+set(JBIG2C_LIB_NAME "jb2")
 
 # Load modules from our source tree too
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Filename.cmake)
@@ -97,7 +98,10 @@ set(JBIG2C_LIB_SRC	core/fxcodec/jbig2/JBig2_ArithDecoder.cpp
 			core/fxcodec/jbig2/JBig2_SddProc.cpp
 			core/fxcodec/jbig2/JBig2_Segment.cpp
 			core/fxcodec/jbig2/JBig2_SymbolDict.cpp
-			core/fxcodec/jbig2/JBig2_TrdProc.cpp)
+			core/fxcodec/jbig2/JBig2_TrdProc.cpp
+			core/fxcodec/codec/ccodec_jbig2module.cpp
+			core/fxcodec/codec/ccodec_faxmodule.cpp
+			core/fxcodec/codec/ccodec_scanlinedecoder.cpp)
 file(GLOB_RECURSE FXCRT_CPPSRC "core/fxcrt/*.cpp")
 file(GLOB_RECURSE FXCRT_CCSRC "core/fxcrt/*.cc")
 list(APPEND JBIG2C_LIB_SRC ${FXCRT_CPPSRC})
@@ -127,7 +131,7 @@ include_directories("./")
 # Compile jbig2codec library and executable
 add_library(${JBIG2C_LIB} STATIC ${JBIG2C_LIB_SRC})
 add_executable(${JBIG2C} main.cpp)
-set_target_properties(${JBIG2C_LIB} PROPERTIES OUTPUT_NAME "jbig2c")
+set_target_properties(${JBIG2C_LIB} PROPERTIES OUTPUT_NAME ${JBIG2C_LIB_NAME})
 define_filename_for_sources(${JBIG2C_LIB})
 
 # Link jbig2codec executable

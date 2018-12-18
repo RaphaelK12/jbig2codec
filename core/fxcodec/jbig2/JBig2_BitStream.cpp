@@ -11,20 +11,6 @@
 #include "core/fpdfapi/parser/cpdf_stream.h"
 #include "core/fpdfapi/parser/cpdf_stream_acc.h"
 
-CJBig2_BitStream::CJBig2_BitStream(const RetainPtr<CPDF_StreamAcc> &pSrcStream)
-	: m_pBuf(pSrcStream->GetData()),
-	  m_dwLength(pSrcStream->GetSize()),
-	  m_dwByteIdx(0),
-	  m_dwBitIdx(0),
-	  m_dwObjNum(pSrcStream->GetStream() ? pSrcStream->GetStream()->GetObjNum()
-	             : 0)
-{
-	if (m_dwLength > 256 * 1024 * 1024) {
-		m_dwLength = 0;
-		m_pBuf = nullptr;
-	}
-}
-
 CJBig2_BitStream::CJBig2_BitStream(uint8_t *buf, uint32_t len,
                                    uint32_t obj_num)
 	: m_dwObjNum(obj_num)

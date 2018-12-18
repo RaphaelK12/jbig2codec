@@ -9,12 +9,9 @@
 
 #include "core/fxcrt/retain_ptr.h"
 
-class CPDF_StreamAcc;
-
 class CJBig2_BitStream
 {
 public:
-	explicit CJBig2_BitStream(const RetainPtr<CPDF_StreamAcc> &pSrcStream);
 	explicit CJBig2_BitStream(uint8_t *buf, uint32_t len, uint32_t on);
 	~CJBig2_BitStream();
 
