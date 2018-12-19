@@ -36,7 +36,7 @@ cmake_minimum_required(VERSION 3.2)
 project(jbig2codec)
 
 # Program version
-set(JBIG2C_VERSION "0.1.2")
+set(JBIG2C_VERSION "0.1.3")
 
 # Program name
 set(JBIG2C "jbig2codec")
@@ -53,7 +53,15 @@ add_definitions(-DJBIG2C_VERSION="${JBIG2C_VERSION}")
 # These definitions are necessary to make it work while being extracted from
 # the Pdfium codebase.
 #
-add_definitions(-D_FX_OS_=4)
+if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+	# If the _FX_OS_ equals 4 and it means that we are building the
+	# program on the GNU/Linux.
+	#
+	# There is a set of macros defined in core/fxcrt/fx_system.h, but
+	# no specific one for FreeBSD. This is why it has been defined as for
+	# GNU/Linux for compatibility.
+	add_definitions(-D_FX_OS_=4)
+endif()
 add_definitions(-DMEMORY_TOOL_REPLACES_ALLOCATOR=1)
 
 include(CheckFunctionExists)
@@ -75,6 +83,7 @@ else()
 	message(STATUS "[OPTION] Building jbig2codec ${JBIG2C_VERSION}, release version")
 	if (CMAKE_COMPILER_IS_GNUCC OR
 			${CMAKE_C_COMPILER_ID} MATCHES "Clang")
+		add_definitions("-std=c++11")
 		#add_definitions(" -Wall -pedantic -std=c++11")
 		#add_definitions(" -Wshadow -Wpointer-arith -Wcast-qual")
 		#add_definitions(" -Wcast-align -Wstrict-prototypes")
