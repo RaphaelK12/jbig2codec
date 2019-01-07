@@ -162,7 +162,7 @@ uint32_t CJBig2_BitStream::getOffset() const
 
 void CJBig2_BitStream::setOffset(uint32_t dwOffset)
 {
-	m_dwByteIdx = std::min(dwOffset, m_dwLength);
+	m_dwByteIdx = (std::min)(dwOffset, m_dwLength);
 }
 
 uint32_t CJBig2_BitStream::getBitPos() const

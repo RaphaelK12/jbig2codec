@@ -36,7 +36,7 @@ cmake_minimum_required(VERSION 3.2)
 project(jbig2codec)
 
 # Program version
-set(JBIG2C_VERSION "0.1.3")
+set(JBIG2C_VERSION "0.1.4")
 
 # Program name
 set(JBIG2C "jbig2codec")
@@ -53,6 +53,9 @@ add_definitions(-DJBIG2C_VERSION="${JBIG2C_VERSION}")
 # These definitions are necessary to make it work while being extracted from
 # the Pdfium codebase.
 #
+# Set C++11 standard (introduced in CMake 3.1)
+SET(CMAKE_CXX_STANDARD 11)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 	# If the _FX_OS_ equals 4 and it means that we are building the
 	# program on the GNU/Linux.
@@ -69,7 +72,7 @@ include(CheckIncludeFiles)
 
 # Set flags here
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-	message(STATUS "[OPTION] Building jbig2codec ${JBIG2C_VERSION}, debug version")
+	message(STATUS "[OPTION] Building ${JBIG2C} ${JBIG2C_VERSION}, debug version")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEBUG")
 	if (CMAKE_COMPILER_IS_GNUCC OR
 			${CMAKE_C_COMPILER_ID} MATCHES "Clang")
@@ -80,7 +83,7 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 		#add_definitions(" -Wmissing-prototypes -Wconversion -Wsign-compare")
 	endif()
 else()
-	message(STATUS "[OPTION] Building jbig2codec ${JBIG2C_VERSION}, release version")
+	message(STATUS "[OPTION] Building ${JBIG2C} ${JBIG2C_VERSION}, release version")
 	if (CMAKE_COMPILER_IS_GNUCC OR
 			${CMAKE_C_COMPILER_ID} MATCHES "Clang")
 		add_definitions("-std=c++11")
@@ -147,4 +150,4 @@ define_filename_for_sources(${JBIG2C_LIB})
 target_link_libraries(${JBIG2C} ${JBIG2C_LIB})
 
 # Install jbig2codec executable
-
+install(TARGETS ${JBIG2C} DESTINATION bin)

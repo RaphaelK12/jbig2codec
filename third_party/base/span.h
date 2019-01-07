@@ -16,12 +16,14 @@
 #include "core/fxcrt/unowned_ptr.h"
 #include "third_party/base/logging.h"
 
-namespace pdfium {
+namespace pdfium
+{
 
 template <typename T>
 class span;
 
-namespace internal {
+namespace internal
+{
 
 template <typename T>
 struct IsSpanImpl : std::false_type {};
@@ -42,20 +44,20 @@ template <typename T>
 using IsStdArray = IsStdArrayImpl<typename std::decay<T>::type>;
 
 template <typename From, typename To>
-using IsLegalSpanConversion = std::is_convertible<From*, To*>;
+using IsLegalSpanConversion = std::is_convertible<From *, To *>;
 
 template <typename Container, typename T>
 using ContainerHasConvertibleData =
-    IsLegalSpanConversion<typename std::remove_pointer<decltype(
-                              std::declval<Container>().data())>::type,
-                          T>;
+        IsLegalSpanConversion<typename std::remove_pointer<decltype(
+                std::declval<Container>().data())>::type,
+        T>;
 template <typename Container>
 using ContainerHasIntegralSize =
-    std::is_integral<decltype(std::declval<Container>().size())>;
+        std::is_integral<decltype(std::declval<Container>().size())>;
 
 template <typename From, typename To>
 using EnableIfLegalSpanConversion =
-    typename std::enable_if<IsLegalSpanConversion<From, To>::value>::type;
+        typename std::enable_if<IsLegalSpanConversion<From, To>::value>::type;
 
 // SFINAE check if Container can be converted to a span<T>. Note that the
 // implementation details of this check differ slightly from the requirements in
@@ -71,18 +73,18 @@ using EnableIfLegalSpanConversion =
 // container.
 template <typename Container, typename T>
 using EnableIfSpanCompatibleContainer =
-    typename std::enable_if<!internal::IsSpan<Container>::value &&
-                            !internal::IsStdArray<Container>::value &&
-                            ContainerHasConvertibleData<Container, T>::value &&
-                            ContainerHasIntegralSize<Container>::value>::type;
+        typename std::enable_if<!internal::IsSpan<Container>::value &&
+        !internal::IsStdArray<Container>::value &&
+        ContainerHasConvertibleData<Container, T>::value &&
+        ContainerHasIntegralSize<Container>::value>::type;
 
 template <typename Container, typename T>
 using EnableIfConstSpanCompatibleContainer =
-    typename std::enable_if<std::is_const<T>::value &&
-                            !internal::IsSpan<Container>::value &&
-                            !internal::IsStdArray<Container>::value &&
-                            ContainerHasConvertibleData<Container, T>::value &&
-                            ContainerHasIntegralSize<Container>::value>::type;
+        typename std::enable_if<std::is_const<T>::value &&
+        !internal::IsSpan<Container>::value &&
+        !internal::IsStdArray<Container>::value &&
+        ContainerHasConvertibleData<Container, T>::value &&
+        ContainerHasIntegralSize<Container>::value>::type;
 
 }  // namespace internal
 
@@ -177,174 +179,220 @@ using EnableIfConstSpanCompatibleContainer =
 
 // [span], class template span
 template <typename T>
-class span {
- public:
-  using value_type = typename std::remove_cv<T>::type;
-  using pointer = T*;
-  using reference = T&;
-  using iterator = T*;
-  using const_iterator = const T*;
-  using reverse_iterator = std::reverse_iterator<iterator>;
-  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+class span
+{
+public:
+	using value_type = typename std::remove_cv<T>::type;
+	using pointer = T*;
+	using reference = T&;
+	using iterator = T*;
+	using const_iterator = const T*;
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  // [span.cons], span constructors, copy, assignment, and destructor
-  constexpr span() noexcept : data_(nullptr), size_(0) {}
-  constexpr span(T* data, size_t size) noexcept : data_(data), size_(size) {}
+	// [span.cons], span constructors, copy, assignment, and destructor
+	constexpr span() noexcept : data_(nullptr), size_(0) {}
+	constexpr span(T *data, size_t size) noexcept : data_(data), size_(size) {}
 
-  // TODO(dcheng): Implement construction from a |begin| and |end| pointer.
-  template <size_t N>
-  constexpr span(T (&array)[N]) noexcept : span(array, N) {}
-  // TODO(dcheng): Implement construction from std::array.
-  // Conversion from a container that provides |T* data()| and |integral_type
-  // size()|.
-  template <typename Container,
-            typename = internal::EnableIfSpanCompatibleContainer<Container, T>>
-  constexpr span(Container& container)
-      : span(container.data(), container.size()) {}
-  template <
-      typename Container,
-      typename = internal::EnableIfConstSpanCompatibleContainer<Container, T>>
-  span(const Container& container) : span(container.data(), container.size()) {}
-  constexpr span(const span& other) noexcept = default;
-  // Conversions from spans of compatible types: this allows a span<T> to be
-  // seamlessly used as a span<const T>, but not the other way around.
-  template <typename U, typename = internal::EnableIfLegalSpanConversion<U, T>>
-  constexpr span(const span<U>& other) : span(other.data(), other.size()) {}
-  span& operator=(const span& other) noexcept = default;
-  ~span() noexcept {
-    if (!size_) {
-      // Empty spans might point to byte N+1 of a N-byte object, legal for
-      // C pointers but not UnownedPtrs.
-      data_.ReleaseBadPointer();
-    }
-  }
+	// TODO(dcheng): Implement construction from a |begin| and |end| pointer.
+	template <size_t N>
+	constexpr span(T (&array)[N]) noexcept : span(array, N) {}
+	// TODO(dcheng): Implement construction from std::array.
+	// Conversion from a container that provides |T* data()| and |integral_type
+	// size()|.
+	template <typename Container,
+	          typename = internal::EnableIfSpanCompatibleContainer<Container, T>>
+	constexpr span(Container &container)
+		: span(container.data(), container.size()) {}
+	template <
+	        typename Container,
+	        typename = internal::EnableIfConstSpanCompatibleContainer<Container, T>>
+	span(const Container &container) : span(container.data(), container.size()) {}
+	constexpr span(const span &other) noexcept = default;
+	// Conversions from spans of compatible types: this allows a span<T> to be
+	// seamlessly used as a span<const T>, but not the other way around.
+	template <typename U, typename = internal::EnableIfLegalSpanConversion<U, T>>
+	span(const span<U> &other) : span(other.data(), other.size()) {}
+	span &operator=(const span &other) noexcept = default;
+	~span() noexcept
+	{
+		if (!size_) {
+			// Empty spans might point to byte N+1 of a N-byte object, legal for
+			// C pointers but not UnownedPtrs.
+			data_.ReleaseBadPointer();
+		}
+	}
 
-  // [span.sub], span subviews
-  const span first(size_t count) const {
-    CHECK(count <= size_);
-    return span(data_.Get(), count);
-  }
+	// [span.sub], span subviews
+	const span first(size_t count) const
+	{
+		CHECK(count <= size_);
+		return span(data_.Get(), count);
+	}
 
-  const span last(size_t count) const {
-    CHECK(count <= size_);
-    return span(data_.Get() + (size_ - count), count);
-  }
+	const span last(size_t count) const
+	{
+		CHECK(count <= size_);
+		return span(data_.Get() + (size_ - count), count);
+	}
 
-  const span subspan(size_t pos, size_t count = -1) const {
-    const auto npos = static_cast<size_t>(-1);
-    CHECK(pos <= size_);
-    CHECK(count == npos || count <= size_ - pos);
-    return span(data_.Get() + pos, count == npos ? size_ - pos : count);
-  }
+	const span subspan(size_t pos, size_t count = -1) const
+	{
+		const auto npos = static_cast<size_t>(-1);
+		CHECK(pos <= size_);
+		CHECK(count == npos || count <= size_ - pos);
+		return span(data_.Get() + pos, count == npos ? size_ - pos : count);
+	}
 
-  // [span.obs], span observers
-  constexpr size_t size() const noexcept { return size_; }
-  constexpr size_t size_bytes() const noexcept { return size() * sizeof(T); }
-  constexpr bool empty() const noexcept { return size_ == 0; }
+	// [span.obs], span observers
+	constexpr size_t size() const noexcept
+	{
+		return size_;
+	}
+	constexpr size_t size_bytes() const noexcept
+	{
+		return size() * sizeof(T);
+	}
+	constexpr bool empty() const noexcept
+	{
+		return size_ == 0;
+	}
 
-  // [span.elem], span element access
-  T& operator[](size_t index) const noexcept {
-    CHECK(index < size_);
-    return data_.Get()[index];
-  }
-  constexpr T* data() const noexcept { return data_.Get(); }
+	// [span.elem], span element access
+	T &operator[](size_t index) const noexcept
+	{
+		CHECK(index < size_);
+		return data_.Get()[index];
+	}
+	constexpr T *data() const noexcept
+	{
+		return data_.Get();
+	}
 
-  // [span.iter], span iterator support
-  constexpr iterator begin() const noexcept { return data_.Get(); }
-  constexpr iterator end() const noexcept { return data_.Get() + size_; }
+	// [span.iter], span iterator support
+	constexpr iterator begin() const noexcept
+	{
+		return data_.Get();
+	}
+	constexpr iterator end() const noexcept
+	{
+		return data_.Get() + size_;
+	}
 
-  constexpr const_iterator cbegin() const noexcept { return begin(); }
-  constexpr const_iterator cend() const noexcept { return end(); }
+	constexpr const_iterator cbegin() const noexcept
+	{
+		return begin();
+	}
+	constexpr const_iterator cend() const noexcept
+	{
+		return end();
+	}
 
-  constexpr reverse_iterator rbegin() const noexcept {
-    return reverse_iterator(end());
-  }
-  constexpr reverse_iterator rend() const noexcept {
-    return reverse_iterator(begin());
-  }
+	constexpr reverse_iterator rbegin() const noexcept
+	{
+		return reverse_iterator(end());
+	}
+	constexpr reverse_iterator rend() const noexcept
+	{
+		return reverse_iterator(begin());
+	}
 
-  constexpr const_reverse_iterator crbegin() const noexcept {
-    return const_reverse_iterator(cend());
-  }
-  constexpr const_reverse_iterator crend() const noexcept {
-    return const_reverse_iterator(cbegin());
-  }
+	constexpr const_reverse_iterator crbegin() const noexcept
+	{
+		return const_reverse_iterator(cend());
+	}
+	constexpr const_reverse_iterator crend() const noexcept
+	{
+		return const_reverse_iterator(cbegin());
+	}
 
- private:
-  UnownedPtr<T> data_;
-  size_t size_;
+private:
+	UnownedPtr<T> data_;
+	size_t size_;
 };
 
 // [span.comparison], span comparison operators
 // Relational operators. Equality is a element-wise comparison.
 template <typename T>
-constexpr bool operator==(span<T> lhs, span<T> rhs) noexcept {
-  return lhs.size() == rhs.size() &&
-         std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
+constexpr bool operator==(span<T> lhs, span<T> rhs) noexcept
+{
+	return lhs.size() == rhs.size() &&
+	       std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
 }
 
 template <typename T>
-constexpr bool operator!=(span<T> lhs, span<T> rhs) noexcept {
-  return !(lhs == rhs);
+constexpr bool operator!=(span<T> lhs, span<T> rhs) noexcept
+{
+	return !(lhs == rhs);
 }
 
 template <typename T>
-constexpr bool operator<(span<T> lhs, span<T> rhs) noexcept {
-  return std::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(),
-                                      rhs.cend());
+constexpr bool operator<(span<T> lhs, span<T> rhs) noexcept
+{
+	return std::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(),
+	                                    rhs.cend());
 }
 
 template <typename T>
-constexpr bool operator<=(span<T> lhs, span<T> rhs) noexcept {
-  return !(rhs < lhs);
+constexpr bool operator<=(span<T> lhs, span<T> rhs) noexcept
+{
+	return !(rhs < lhs);
 }
 
 template <typename T>
-constexpr bool operator>(span<T> lhs, span<T> rhs) noexcept {
-  return rhs < lhs;
+constexpr bool operator>(span<T> lhs, span<T> rhs) noexcept
+{
+	return rhs < lhs;
 }
 
 template <typename T>
-constexpr bool operator>=(span<T> lhs, span<T> rhs) noexcept {
-  return !(lhs < rhs);
+constexpr bool operator>=(span<T> lhs, span<T> rhs) noexcept
+{
+	return !(lhs < rhs);
 }
 
 // [span.objectrep], views of object representation
 template <typename T>
-span<const uint8_t> as_bytes(span<T> s) noexcept {
-  return {reinterpret_cast<const uint8_t*>(s.data()), s.size_bytes()};
+span<const uint8_t> as_bytes(span<T> s) noexcept
+{
+	return {reinterpret_cast<const uint8_t *>(s.data()), s.size_bytes()};
 }
 
 template <typename T,
           typename U = typename std::enable_if<!std::is_const<T>::value>::type>
-span<uint8_t> as_writable_bytes(span<T> s) noexcept {
-  return {reinterpret_cast<uint8_t*>(s.data()), s.size_bytes()};
+span<uint8_t> as_writable_bytes(span<T> s) noexcept
+{
+	return {reinterpret_cast<uint8_t *>(s.data()), s.size_bytes()};
 }
 
 // Type-deducing helpers for constructing a span.
 template <typename T>
-constexpr span<T> make_span(T* data, size_t size) noexcept {
-  return span<T>(data, size);
+constexpr span<T> make_span(T *data, size_t size) noexcept
+{
+	return span<T>(data, size);
 }
 
 template <typename T, size_t N>
-constexpr span<T> make_span(T (&array)[N]) noexcept {
-  return span<T>(array);
+constexpr span<T> make_span(T (&array)[N]) noexcept
+{
+	return span<T>(array);
 }
 
 template <typename Container,
           typename T = typename Container::value_type,
           typename = internal::EnableIfSpanCompatibleContainer<Container, T>>
-constexpr span<T> make_span(Container& container) {
-  return span<T>(container);
+constexpr span<T> make_span(Container &container)
+{
+	return span<T>(container);
 }
 
 template <
-    typename Container,
-    typename T = typename std::add_const<typename Container::value_type>::type,
-    typename = internal::EnableIfConstSpanCompatibleContainer<Container, T>>
-constexpr span<T> make_span(const Container& container) {
-  return span<T>(container);
+        typename Container,
+        typename T = typename std::add_const<typename Container::value_type>::type,
+        typename = internal::EnableIfConstSpanCompatibleContainer<Container, T>>
+constexpr span<T> make_span(const Container &container)
+{
+	return span<T>(container);
 }
 
 }  // namespace pdfium
